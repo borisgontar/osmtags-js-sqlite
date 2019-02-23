@@ -1,0 +1,24 @@
+{
+  "name": "osmtags",
+  "version": "1.0.0",
+  "description": "Extracts all keys and their values from an OSM pbf file.",
+  "main": "osmtags.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "javascript",
+    "node.js",
+    "sqlite3",
+    "osm",
+    "openstreetmap"
+  ],
+  "author": "Boris Gontar",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^5.4.0",
+    "osm-pbf-parser": "^2.3.0",
+    "through2": "^3.0.0",
+    "yargs": "^13.2.1"
+  }
+}
