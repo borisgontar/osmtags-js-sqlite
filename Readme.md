@@ -1,9 +1,9 @@
 ﻿# osmtags-js-sqlite
 
-This is a simple Node.js application to collect tags from an OpenStreetMap `osm.pbf` file into a SQLite3 database. It extracts all tags from the input file and creates a table in the target  database with the following data:
+This is a simple Node.js application to collect tags from an OpenStreetMap `osm.pbf` file into a SQLite3 database. It extracts all tags from the input files and creates a table in the target  database with the following data:
 * All distinct keys present in the tags.
-* For each key, all (well, almost) its distinct values. 
-* For each {key, value} pair, number of times this pair was found in nodes, ways and relations.
+* For each key, all (if not too many) its distinct values. 
+* For each {key, value} pair, numbers of times this pair was found in nodes, ways and relations.
 
 The table is created as:
 ```sql
@@ -16,7 +16,7 @@ create table osmtags (
   primary key(key, value)
 );
 ```
-Some keys, like `addr:street` can have too many values, so there is a limit for number of such values. When this limit is reached all {key, value} records for such key are coalesced into a single record with value "~". In this case the counts represent numbers of times the key was found in nodes, ways and relations, regardless of its value.
+Some keys, like `name` can have too many values, so there is a limit for number of such values. When this limit is reached all {key, value} table  rows for such key are coalesced into a single row with value "~". In this case the counts represent numbers of times the key was found in nodes, ways and relations, regardless of its value.
 
 Some keys can have multiple 'subkeys', like `addr:street`, `addr:housenumber`, etc. The application allows to coalesce such keys into a single one (`addr` in this example). 
 
