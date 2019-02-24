@@ -10,6 +10,7 @@
     "javascript",
     "node.js",
     "sqlite3",
+    "gis",
     "osm",
     "openstreetmap"
   ],
@@ -20,5 +21,9 @@
     "osm-pbf-parser": "^2.3.0",
     "through2": "^3.0.0",
     "yargs": "^13.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/borisgontar/osmtags-js-sqlite.git"
   }
 }

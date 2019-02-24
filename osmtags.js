@@ -104,23 +104,17 @@ function scan(file, callback) {
     });
 }
 
-create_stmt.run();
-load();
-console.time('elapsed');
-pass().then(() => {
-    store();
-    db.close();
-    console.timeEnd('elapsed');
-});
-
 async function pass() {
     for (let file of argv.files) {
         console.log('reading ' + file);
         let count = 0;
+        let empty = [0, 0, 0];
         await scan(file, item => {
             let {type, tags} = item;
             let j = type == 'node' ? 0 : type == 'way' ? 1 : 2;
+            let haskeys = false;
             for (let key in tags) if (tags.hasOwnProperty(key)) {
+                haskeys = true;
                 let value = tags[key];
                 if (argv.c) {
                     let i = key.indexOf(':');
@@ -148,9 +142,21 @@ async function pass() {
                     table[key] = {'~': acc};
                 }
             }
+            if (!haskeys)
+                empty[j] += 1;
             if ((++count % 1000000) === 0)
                 process.stdout.write('objects: ' + count + '\r');
         });
         console.log('objects:', count);
+        console.log('no tags in %d nodes, %d ways, %d relations', ...empty);
     }
 }
+
+create_stmt.run();
+load();
+console.time('elapsed');
+pass().then(() => {
+    store();
+    db.close();
+    console.timeEnd('elapsed');
+});
