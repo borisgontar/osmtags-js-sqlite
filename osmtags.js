@@ -1,4 +1,5 @@
 const fs = require('fs');
+const util = require('util');
 const through = require('through2');
 const parseOSM = require('osm-pbf-parser');
 const Database = require('better-sqlite3');
@@ -30,11 +31,6 @@ const argv = require('yargs')
             number: true,
             default: 256
         },
-        memory: {
-            describe: 'Cache size in Mb',
-            default: 1024,
-            number: true
-        },
         h: {alias: 'help'}
     })
     .usage('Extracts all keys and their values from an OSM pbf file.')
@@ -43,9 +39,6 @@ const argv = require('yargs')
     .argv;
 
 const db = new Database(argv.d, {verbose: null});
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = 1');
-db.pragma(`cache_size = -${argv.memory*1024}`);
 
 const create_stmt = db.prepare(
     'create table if not exists osmtags(' +
@@ -67,7 +60,7 @@ function load() {
         count += 1;
     }
     if (count > 0)
-        console.log('%d records loaded', count);
+        console.log(`${count} records loaded`);
 }
 
 function store() {
@@ -107,7 +100,7 @@ function scan(file, callback) {
 async function pass() {
     for (let file of argv.files) {
         console.log('reading ' + file);
-        let count = 0;
+        let count = [0, 0, 0], total = 0;
         let empty = [0, 0, 0];
         await scan(file, item => {
             let {type, tags} = item;
@@ -144,10 +137,12 @@ async function pass() {
             }
             if (!haskeys)
                 empty[j] += 1;
-            if ((++count % 1000000) === 0)
-                process.stdout.write('objects: ' + count + '\r');
+            count[j] += 1;
+            if ((++total % 1000000) === 0)
+                process.stdout.write(util.format(
+                    'scanned: %d nodes, %d ways, %d relations\r', ...count));
         });
-        console.log('objects:', count);
+        console.log(util.format('scanned: %d nodes, %d ways, %d relations', ...count));
         console.log('no tags in %d nodes, %d ways, %d relations', ...empty);
     }
 }
