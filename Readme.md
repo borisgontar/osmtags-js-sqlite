@@ -39,6 +39,8 @@ where _options_ are:
   <dd>Treat all keys like <code>addr</code> and <code>addr:whatever</code> as the same key <code>addr</code>.</dd>
   <dt>-l <i>number</i></dt>
   <dd>Limit number of stored distinct values for a key to the specified <i>number</i>. The default is 256.</dd>
+  <dt>-h, --help</dt>
+  <dd>Prints short help message.</dd>
 </dl>
 
 ## An example
