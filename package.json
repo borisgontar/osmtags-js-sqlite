@@ -1,6 +1,6 @@
 {
   "name": "osmtags",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extracts all keys and their values from an OSM pbf file.",
   "main": "osmtags.js",
   "scripts": {
@@ -12,6 +12,7 @@
     "sqlite3",
     "gis",
     "osm",
+    "tags",
     "openstreetmap"
   ],
   "author": "Boris Gontar",
