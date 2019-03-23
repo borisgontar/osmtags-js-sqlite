@@ -98,7 +98,7 @@ function scan(file, callback) {
                 (items, enc, next) => {
                     for (let item of items)
                         callback(item);
-                    next();         9241
+                    next();
                 }))
             .on('finish', resolve);
     });
