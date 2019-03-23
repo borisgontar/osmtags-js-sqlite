@@ -34,9 +34,16 @@ const argv = require('yargs')
         h: {alias: 'help'}
     })
     .usage('Extracts all keys and their values from an OSM pbf file.')
-    .version(false)
+    .version(version())
     .strict(true)
     .argv;
+
+function version() {
+    const db = new Database();
+    const sqlite_version = db.prepare('select sqlite_version()').pluck().get();
+    db.close();
+    return `app: 1.0.1, node: ${process.version}, sqlite: ${sqlite_version}`;
+}
 
 const db = new Database(argv.d, {verbose: null});
 
@@ -91,7 +98,7 @@ function scan(file, callback) {
                 (items, enc, next) => {
                     for (let item of items)
                         callback(item);
-                    next();
+                    next();         9241
                 }))
             .on('finish', resolve);
     });
