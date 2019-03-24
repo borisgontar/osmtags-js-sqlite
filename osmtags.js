@@ -4,6 +4,8 @@ const through = require('through2');
 const parseOSM = require('osm-pbf-parser');
 const Database = require('better-sqlite3');
 
+const _version = '1.0.2';
+
 /** @type {{files:string, d:string, c:boolean, memory:number, l:number}} */
 const argv = require('yargs')
     .options({
@@ -42,7 +44,7 @@ function version() {
     const db = new Database();
     const sqlite_version = db.prepare('select sqlite_version()').pluck().get();
     db.close();
-    return `app: 1.0.1, node: ${process.version}, sqlite: ${sqlite_version}`;
+    return `app: ${_version}, node: ${process.version}, sqlite: ${sqlite_version}`;
 }
 
 const db = new Database(argv.d, {verbose: null});
@@ -107,11 +109,25 @@ function scan(file, callback) {
 async function pass() {
     for (let file of argv.files) {
         console.log('reading ' + file);
-        let count = [0, 0, 0], total = 0;
+        let count = [0, 0, 0];
         let empty = [0, 0, 0];
+        let lastj = 0, unseq = [];
+        let tmout = setInterval(() => {
+            process.stdout.write(util.format(
+                'scanned: %d nodes, %d ways, %d relations\r', ...count));
+        }, 1000);
         await scan(file, item => {
             let {type, tags} = item;
-            let j = type == 'node' ? 0 : type == 'way' ? 1 : 2;
+            let j = type == 'node' ? 0 : type == 'way' ? 1 :
+                type == 'relation' ? 2 : -1;
+            if (j < 0)
+                throw 'file format error: type=' + type;
+            if (j < lastj) {
+                lastj = j;
+                unseq[j] = 0;
+            }
+            if (unseq[j] != undefined)
+                unseq[j]++;
             let haskeys = false;
             for (let key in tags) if (tags.hasOwnProperty(key)) {
                 haskeys = true;
@@ -145,12 +161,14 @@ async function pass() {
             if (!haskeys)
                 empty[j] += 1;
             count[j] += 1;
-            if ((++total % 1000000) === 0)
-                process.stdout.write(util.format(
-                    'scanned: %d nodes, %d ways, %d relations\r', ...count));
         });
-        console.log(util.format('scanned: %d nodes, %d ways, %d relations', ...count));
+        clearInterval(tmout);
+        console.log('scanned: %d nodes, %d ways, %d relations', ...count);
         console.log('no tags in %d nodes, %d ways, %d relations', ...empty);
+        if (unseq[0] != undefined)
+            console.log('%d nodes out of sequence', unseq[0]);
+        if (unseq[1] != undefined)
+            console.log('%d ways out of sequence', unseq[1]);
     }
 }
 

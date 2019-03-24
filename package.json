@@ -1,6 +1,6 @@
 {
   "name": "osmtags",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Extracts all keys and their values from an OSM pbf file.",
   "main": "osmtags.js",
   "scripts": {
