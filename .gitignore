@@ -1,4 +1,5 @@
 node_modules
 .idea
-*.sqlite
+.vscode
 package-lock.json
+*.sqlite

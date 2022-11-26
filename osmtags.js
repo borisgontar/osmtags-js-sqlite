@@ -1,53 +1,59 @@
 const fs = require('fs');
 const util = require('util');
+const path = require('path');
 const through = require('through2');
 const parseOSM = require('osm-pbf-parser');
 const Database = require('better-sqlite3');
 
-const _version = '1.0.2';
+const usage = `
+Extracts all keys and their values from an OSM pbf file into a SQLite database
 
-/** @type {{files:string, d:string, c:boolean, memory:number, l:number}} */
-const argv = require('yargs')
-    .options({
-        f: {
-            alias: 'files',
-            array: true,
-            describe: 'Path(s) to input file(s) .osm.pbf',
-            demand: true,
-            normalize: true
-        },
-        d: {
-            alias: 'database',
-            nargs: 1,
-            describe: 'Path to .sqlite database',
-            demand: true,
-            normalize: true
-        },
-        c: {
-            describe: 'Coalesce keys like name:xx into name',
-            boolean: true
-        },
-        l: {
-            alias: 'limit',
-            describe: 'Represent key with more than l values as single row with value "~"',
-            number: true,
-            default: 256
-        },
-        h: {alias: 'help'}
-    })
-    .usage('Extracts all keys and their values from an OSM pbf file.')
-    .version(version())
-    .strict(true)
-    .argv;
+Options:
+  -d, --database    Path to the database.                           [required]
+  -c, --coalesce    Coalesce keys like name:xx into single name.
+  -l, --limit       Represent key with more than l values as single row
+                    with value "~".                              [default 256]
+  -h, --help        Show this help and exit.
+      --version     Show version number and exit.
 
-function version() {
-    const db = new Database();
-    const sqlite_version = db.prepare('select sqlite_version()').pluck().get();
-    db.close();
-    return `app: ${_version}, node: ${process.version}, sqlite: ${sqlite_version}`;
-}
+Positional args: paths to the input files.
+`;
 
-const db = new Database(argv.d, {verbose: null});
+const { args, files } = (() => {
+    try {
+        const { values, positionals } = util.parseArgs({
+            options: {
+                database: { type: 'string', short: 'd' },
+                coalesce: { type: 'boolean', short: 'c' },
+                limit: { type: 'string', short: 'l' },
+                help: { type: 'boolean', short: 'h' },
+                version: { type: 'boolean' }
+            },
+            allowPositionals: true,
+            strict: true
+        });
+        if (values.help) {
+            console.log(usage);
+            process.exit(0);
+        }
+        if (values.version) {
+            version();
+            process.exit(0);
+        }
+        if (!values.database)
+            throw new Error('Required option missing: -d.');
+        let l = Number(values.limit) || 256;
+        if (!Number.isInteger(l) || l < 0)
+            throw new Error('Option --limit should be a positive integer.');
+        return { args: values, files: positionals };
+    } catch (err) {
+        console.log(usage);
+        console.log(err.message);
+        process.exit(1);
+    }
+})();
+
+const db = new Database(args.database);
 
 const create_stmt = db.prepare(
     'create table if not exists osmtags(' +
@@ -69,7 +75,7 @@ function load() {
         count += 1;
     }
     if (count > 0)
-        console.log(`${count} records loaded`);
+        console.log(`${count} records loaded from existing osmtags`);
 }
 
 function store() {
@@ -107,7 +113,11 @@ function scan(file, callback) {
 }
 
 async function pass() {
-    for (let file of argv.files) {
+    for (let file of files) {
+        if (!fs.existsSync(file)) {
+            console.log(`File not found: '${file}', skipping.`);
+            continue;
+        }
         console.log('reading ' + file);
         let count = [0, 0, 0];
         let empty = [0, 0, 0];
@@ -116,6 +126,7 @@ async function pass() {
             process.stdout.write(util.format(
                 'scanned: %d nodes, %d ways, %d relations\r', ...count));
         }, 1000);
+        let limit = parseInt(args.limit);
         await scan(file, item => {
             let {type, tags} = item;
             let j = type == 'node' ? 0 : type == 'way' ? 1 :
@@ -129,10 +140,10 @@ async function pass() {
             if (unseq[j] != undefined)
                 unseq[j]++;
             let haskeys = false;
-            for (let key in tags) if (tags.hasOwnProperty(key)) {
+            for (let key in tags) {
                 haskeys = true;
                 let value = tags[key];
-                if (argv.c) {
+                if (args.coalesce) {
                     let i = key.indexOf(':');
                     if (i > 0)
                         key = key.substring(0, i);
@@ -144,7 +155,7 @@ async function pass() {
                     row['~'][j] += 1;
                 else if (row[value])
                     row[value][j] += 1;
-                else if (Object.keys(row).length <= argv.l) {
+                else if (Object.keys(row).length <= limit) {
                     row[value] = [0, 0, 0];
                     row[value][j] += 1;
                 } else {
@@ -170,6 +181,22 @@ async function pass() {
         if (unseq[1] != undefined)
             console.log('%d ways out of sequence', unseq[1]);
     }
+}
+
+function version() {
+    const db = new Database(':memory:');
+    const sqlite_version = db.prepare('select sqlite_version()').pluck().get();
+    db.close();
+    let version = 'unknown';
+    try {
+        const pkgfn = path.join(path.dirname(process.argv[1]), '/package.json');
+        const pkg = JSON.parse(fs.readFileSync(pkgfn).toString());
+        version = pkg.version;
+    } catch (err) {
+        console.log('Installation problem: package.json missing or corrupted.');
+    }
+    console.log(`App version: ${version}, Node: ${process.versions.node}, ` +
+        `SQLite: ${sqlite_version}`);
 }
 
 create_stmt.run();
