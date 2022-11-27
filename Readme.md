@@ -64,84 +64,87 @@ Note that:
 * The <code>-l</code> option sets the limit of stored distinct values for a key
  to the specified number. The default is 256.
 
-## Examples
 Due to excellent [osm-pbf-parser](https://github.com/substack/osm-pbf-parser)
 by substack and [better-sqlite3](https://github.com/JoshuaWise/better-sqlite3)
 by JoshuaWise the application is simple and fast. Counting tags in
-`north-america-latest.osm.pbf` (dated end of Jan. 2019, 8.1Gb) took less than 15 min.
+`planet-latest.osm.pbf` (dated Oct. 2022, 67Gb) took 3 hours 10 min.
 on my PC (Intel i7-2600 at 3.40GHz).
 ```
-$ node osmtags.js -d tags-na.sqlite -f ../north-america-latest.osm.pbf -c -l 1024
-reading ..\north-america-latest.osm.pbf
-scanned: 1055691461 nodes, 82486428 ways, 829863 relations
-no tags in 1031193760 nodes, 2699506 ways, 1030 relations
-elapsed: 853037.913ms
+$ node osmtags.js -d planet-tags.sqlite -c -l 1024 planet-latest.osm.pbf
+reading planet-latest.osm.pbf
+scanned: 7961992696 nodes, 892558311 ways, 10291367 relations
+no tags in 7761372553 nodes, 14830012 ways, 182 relations
+elapsed: 3:10:16.463 (h:mm:ss.mmm)
 ```
-The resuling database is about 10.5Mb in size.
+The resuling database is about 36Mb in size.
 
-The application does not trim (removes leading and trailing white space)
+## Examples
+
+The application does not trim leading and trailing white space from
 keys and values. Let's see if there are such:
 ```sql
 sqlite> select count(*) from osmtags where key != trim(key);
-0
+14
 select count(*) from osmtags where value != trim(value);
-556
+564
 ```
 OpenStreetMap allows but
 [does not recommend](https://wiki.openstreetmap.org/wiki/Semi-colon_value_separator)
 using semicolons as separators for multiple values of the same key. Let's see:
 ```sql
 sqlite> select count(*) from osmtags where instr(value, ';') != 0;
-7334
+21682
 ```
 Which keys with too many values are most frequenly used?
 ```sql
 sqlite> select key, (n+w+r) total from osmtags where value='~' order by total desc limit 10;
-key                        total
--------------------------  ------------
-tiger                      80362772
-addr                       60173520
-building                   36065503
-source                     30639740
-name                       17251934
-NHD                        11667256
-waterway                   7838344
-height                     6802137
-gnis                       6780575
-lacounty                   5928937
+key         total
+----------  ----------
+building    575692021
+addr        559712241
+source      301573005
+highway     229231539
+name        111103790
+tiger       75717248
+natural     55921276
+surface     48147704
+ref         47618702
+landuse     37465609
 ```
 And what about keys with not too many values?
 ```sql
 select key, value, (n+w+r) total from osmtags where value!='~' order by total desc limit 10;
-key              value                      total
----------------  -------------------------  ----------
-highway          residential                11472697
-highway          service                    7896478
-natural          water                      4528548
-attribution      Office of Geographic and   2605080
-access           private                    2555790
-oneway           yes                        2460704
-lanes            2                          2452580
-power            tower                      2192232
-highway          footway                    1992092
-natural          tree                       1984326
+key         value       total
+----------  ----------  ----------
+power       tower       14762730
+wall        no          12164943
+power       pole        10497260
+lanes       2           9149008
+layer       1           6741169
+lit         yes         6404340
+created_by  JOSM        4855805
+lanes       1           4548328
+intermitte  yes         4425470
+leaf_type   broadleave  4273000
 ```
 Which tags are used only in ways?
 ```sql
-select key,value from osmtags where n=0 and r=0 order by w desc limit 10;
-condition   good
-width       12.2
-width       15.2
-highway     path
-width       9.1
-source      massgis
-highway     tertiary
-building    shed
-hgv         yes
-footway     sidewalk
+select key,value,w from osmtags where n=0 and r=0 order by w desc limit 10;
+key         value       w
+----------  ----------  ----------
+LINZ        cliff_edge  54373
+HFCS        Urban Mino  47301
+mapper      mspray11    36623
+HFCS        Urban Coll  34776
+id_origin   ~           34293
+mapper      mspray12    32129
+zoning      grass       29480
+footway     asphalt     27913
+mapper      mspray13    26951
+Source      Akros       25816
 ```
 ## P.S.
 Of course the [taginfo](https://taginfo.openstreetmap.org/) site already has
 all kinds of statistics about tags in the OpenStreetMap database.
-I just wanted something small and simple and, most important,
+I just wanted to have a tool, something small and simple and, most important,
 easily customizable to my needs. After all, it's about 200 lines of code.
