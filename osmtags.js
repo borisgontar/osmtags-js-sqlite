@@ -13,6 +13,7 @@ Options:
   -c, --coalesce    Coalesce keys like name:xx into single name.
   -l, --limit       Represent key with more than l values as single row
                     with value "~".                              [default 256]
+  -q, --quiet       Run silently.
   -h, --help        Show this help and exit.
       --version     Show version number and exit.
 
@@ -26,6 +27,7 @@ const { args, files } = (() => {
                 database: { type: 'string', short: 'd' },
                 coalesce: { type: 'boolean', short: 'c' },
                 limit: { type: 'string', short: 'l' },
+                quiet: { type: 'boolean', short: 'q' },
                 help: { type: 'boolean', short: 'h' },
                 version: { type: 'boolean' }
             },
@@ -74,7 +76,7 @@ function load() {
         table[key][value] = [n, w, r];
         count += 1;
     }
-    if (count > 0)
+    if (count > 0 && !args.quiet)
         console.log(`${count} records loaded from existing osmtags`);
 }
 
@@ -118,11 +120,11 @@ async function pass() {
             console.log(`File not found: '${file}', skipping.`);
             continue;
         }
-        console.log('reading ' + file);
+        if (!args.quiet)
+            console.log('reading ' + file);
         let count = [0, 0, 0];
         let empty = [0, 0, 0];
-        let lastj = 0, unseq = [];
-        let tmout = setInterval(() => {
+        let tmout = args.quiet ? 0 : setInterval(() => {
             process.stdout.write(util.format(
                 'scanned: %d nodes, %d ways, %d relations\r', ...count));
         }, 1000);
@@ -132,13 +134,7 @@ async function pass() {
             let j = type == 'node' ? 0 : type == 'way' ? 1 :
                 type == 'relation' ? 2 : -1;
             if (j < 0)
-                throw 'file format error: type=' + type;
-            if (j < lastj) {
-                lastj = j;
-                unseq[j] = 0;
-            }
-            if (unseq[j] != undefined)
-                unseq[j]++;
+                throw new Error('file format error: type=' + type);
             let haskeys = false;
             for (let key in tags) {
                 haskeys = true;
@@ -173,13 +169,11 @@ async function pass() {
                 empty[j] += 1;
             count[j] += 1;
         });
-        clearInterval(tmout);
-        console.log('scanned: %d nodes, %d ways, %d relations', ...count);
-        console.log('no tags in %d nodes, %d ways, %d relations', ...empty);
-        if (unseq[0] != undefined)
-            console.log('%d nodes out of sequence', unseq[0]);
-        if (unseq[1] != undefined)
-            console.log('%d ways out of sequence', unseq[1]);
+        if (!args.quiet) {
+            clearInterval(tmout);
+            console.log('scanned: %d nodes, %d ways, %d relations', ...count);
+            console.log('no tags in %d nodes, %d ways, %d relations', ...empty);
+        }
     }
 }
 
@@ -199,11 +193,18 @@ function version() {
         `SQLite: ${sqlite_version}`);
 }
 
-create_stmt.run();
-load();
-console.time('elapsed');
-pass().then(() => {
-    store();
-    db.close();
-    console.timeEnd('elapsed');
-});
+try {
+    create_stmt.run();
+    load();
+    if (!args.quiet)
+        console.time('elapsed');
+    pass().then(() => {
+        store();
+        db.close();
+        if (!args.quiet)
+            console.timeEnd('elapsed');
+    });
+} catch (err) {
+    console.dir(err);
+    process.exit(1);
+}

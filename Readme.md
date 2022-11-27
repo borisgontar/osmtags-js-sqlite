@@ -48,6 +48,7 @@ Options:
   -c, --coalesce    Coalesce keys like name:xx into single name.
   -l, --limit       Represent key with more than l values as single row
                     with value "~".                              [default 256]
+  -q, --quiet       Run silently.
   -h, --help        Show this help and exit.
       --version     Show version number and exit.
 
@@ -82,8 +83,8 @@ subdirectory just in case you want to play with it.
 ## Examples
 
 To run queries against the database you need the <code>sqlite3</code> utility.
-Download the 'sqlite-tools' binaries from https://sqlite.org/download.html and 
-copy the executable files into a directory in your $PATH. To make query results 
+Download the 'sqlite-tools' binaries from https://sqlite.org/download.html and
+copy the executable files into a directory in your $PATH. To make query results
 look better, set output mode like this:
 ```bash
 $ sqlite3 planet-tags.sqlite
