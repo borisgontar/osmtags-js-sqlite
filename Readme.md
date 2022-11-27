@@ -76,9 +76,22 @@ scanned: 7961992696 nodes, 892558311 ways, 10291367 relations
 no tags in 7761372553 nodes, 14830012 ways, 182 relations
 elapsed: 3:10:16.463 (h:mm:ss.mmm)
 ```
-The resuling database is about 36Mb in size.
+The resuling database is about 36Mb in size. It's included into the <code>example</code>
+subdirectory just in case you want to play with it.
 
 ## Examples
+
+To run queries against the database you need the <code>sqlite3</code> utility.
+Download the 'sqlite-tools' binaries from https://sqlite.org/download.html and 
+copy the executable files into a directory in your $PATH. To make query results 
+look better, set output mode like this:
+```bash
+$ sqlite3 planet-tags.sqlite
+SQLite version 3.40.0 2022-11-16 12:10:08
+Enter ".help" for usage hints.
+sqlite> .mode col
+sqlite> .header on
+```
 
 The application does not trim leading and trailing white space from
 keys and values. Let's see if there are such:
