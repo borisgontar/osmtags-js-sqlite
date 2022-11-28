@@ -55,14 +55,14 @@ const { args, files } = (() => {
     }
 })();
 
-const db = new Database(args.database);
-
-const create_stmt = db.prepare(
-    'create table if not exists osmtags(' +
-    'key text not null, value text not null,' +
-    'n int default 0, w int default 0, r int default 0,' +
-    'primary key(key, value))');
-const drop_stmt = db.prepare('drop table if exists osmtags');
+const db = (() => {
+    try {
+        return new Database(args.database);
+    } catch (err) {
+        console.log(err.message);
+        process.exit(1);
+    }
+})();
 
 const table = {};
 
@@ -81,6 +81,12 @@ function load() {
 }
 
 function store() {
+    const create_stmt = db.prepare(
+        'create table if not exists osmtags(' +
+        'key text not null, value text not null,' +
+        'n int default 0, w int default 0, r int default 0,' +
+        'primary key(key, value))');
+    const drop_stmt = db.prepare('drop table if exists osmtags');
     const ins_stmt = db.prepare('insert into osmtags values(?,?,?,?,?)');
     drop_stmt.run();
     create_stmt.run();
@@ -122,13 +128,13 @@ async function pass() {
         }
         if (!args.quiet)
             console.log('reading ' + file);
-        let count = [0, 0, 0];
-        let empty = [0, 0, 0];
-        let tmout = args.quiet ? 0 : setInterval(() => {
+        const count = [0, 0, 0];
+        const empty = [0, 0, 0];
+        const tmout = args.quiet ? 0 : setInterval(() => {
             process.stdout.write(util.format(
                 'scanned: %d nodes, %d ways, %d relations\r', ...count));
         }, 1000);
-        let limit = parseInt(args.limit);
+        const limit = parseInt(args.limit);
         await scan(file, item => {
             let {type, tags} = item;
             let j = type == 'node' ? 0 : type == 'way' ? 1 :
@@ -194,7 +200,6 @@ function version() {
 }
 
 try {
-    create_stmt.run();
     load();
     if (!args.quiet)
         console.time('elapsed');
