@@ -69,7 +69,7 @@ Due to excellent [osm-pbf-parser](https://github.com/substack/osm-pbf-parser)
 by substack and [better-sqlite3](https://github.com/JoshuaWise/better-sqlite3)
 by JoshuaWise the application is simple and fast. Counting tags in
 `planet-latest.osm.pbf` (dated Oct. 2022, 67Gb) took 3 hours 10 min.
-on my PC (Intel i7-2600 at 3.40GHz).
+on my PC (Intel i7-2600 at 3.40GHz, memory DDR3 at 800MHz, SATA SSD).
 ```
 $ node osmtags.js -d planet-tags.sqlite -c -l 1024 planet-latest.osm.pbf
 reading planet-latest.osm.pbf
@@ -157,6 +157,13 @@ footway     asphalt     27913
 mapper      mspray13    26951
 Source      Akros       25816
 ```
+
+## Acknowledgments
+
+This application is based on the osm-pbf-parser version 2.3.0 published by substack
+in about 2014. As it is no longer (as of Nov. 2022) available on Github,
+its code (after some trivial modifications) was copied into lib/parser.js.
+
 ## P.S.
 Of course the [taginfo](https://taginfo.openstreetmap.org/) site already has
 all kinds of statistics about tags in the OpenStreetMap database.

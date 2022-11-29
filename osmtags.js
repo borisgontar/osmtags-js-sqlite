@@ -1,9 +1,9 @@
-const fs = require('fs');
-const util = require('util');
-const path = require('path');
-const through = require('through2');
-const parseOSM = require('osm-pbf-parser');
-const Database = require('better-sqlite3');
+import { createReadStream, existsSync, readFileSync } from 'node:fs';
+import { parseArgs, format } from 'node:util';
+import { join, dirname } from 'node:path';
+import { Transform } from 'readable-stream';
+import parseOSM from './lib/parser.js';
+import Database from 'better-sqlite3';
 
 const usage = `
 Extracts all keys and their values from an OSM pbf file into a SQLite database
@@ -22,7 +22,7 @@ Positional args: paths to the input files.
 
 const { args, files } = (() => {
     try {
-        const { values, positionals } = util.parseArgs({
+        const { values, positionals } = parseArgs({
             options: {
                 database: { type: 'string', short: 'd' },
                 coalesce: { type: 'boolean', short: 'c' },
@@ -55,9 +55,21 @@ const { args, files } = (() => {
     }
 })();
 
+const create_sql = `
+create table if not exists osmtags (
+  key text not null,
+  value text not null,
+  n int default 0,
+  w int default 0,
+  r int default 0,
+  primary key(key, value))
+`;
+
 const db = (() => {
     try {
-        return new Database(args.database);
+        const db = new Database(args.database);
+        db.prepare(create_sql).run();
+        return db;
     } catch (err) {
         console.log(err.message);
         process.exit(1);
@@ -81,15 +93,7 @@ function load() {
 }
 
 function store() {
-    const create_stmt = db.prepare(
-        'create table if not exists osmtags(' +
-        'key text not null, value text not null,' +
-        'n int default 0, w int default 0, r int default 0,' +
-        'primary key(key, value))');
-    const drop_stmt = db.prepare('drop table if exists osmtags');
-    const ins_stmt = db.prepare('insert into osmtags values(?,?,?,?,?)');
-    drop_stmt.run();
-    create_stmt.run();
+    const ins_stmt = db.prepare('insert or replace into osmtags values(?,?,?,?,?)');
     db.prepare('begin').run();
     for (let key of Object.keys(table).sort()) {
         let row = table[key];
@@ -108,21 +112,24 @@ function store() {
  */
 function scan(file, callback) {
     return new Promise(resolve => {
-        fs.createReadStream(file)
+        createReadStream(file)
             .pipe(parseOSM())
-            .pipe(through.obj(
-                (items, enc, next) => {
+            .pipe(new Transform.PassThrough({
+                objectMode: true,
+                //highWaterMark: 1,
+                transform: (items, enc, next) => {
                     for (let item of items)
                         callback(item);
                     next();
-                }))
+                }
+            }))
             .on('finish', resolve);
     });
 }
 
 async function pass() {
     for (let file of files) {
-        if (!fs.existsSync(file)) {
+        if (!existsSync(file)) {
             console.log(`File not found: '${file}', skipping.`);
             continue;
         }
@@ -131,10 +138,11 @@ async function pass() {
         const count = [0, 0, 0];
         const empty = [0, 0, 0];
         const tmout = args.quiet ? 0 : setInterval(() => {
-            process.stdout.write(util.format(
+            process.stdout.write(format(
                 'scanned: %d nodes, %d ways, %d relations\r', ...count));
         }, 1000);
         const limit = parseInt(args.limit);
+        let elapsed = Date.now();
         await scan(file, item => {
             let {type, tags} = item;
             let j = type == 'node' ? 0 : type == 'way' ? 1 :
@@ -175,9 +183,12 @@ async function pass() {
                 empty[j] += 1;
             count[j] += 1;
         });
+        elapsed = (Date.now() - elapsed) * 0.001;    // seconds
         if (!args.quiet) {
             clearInterval(tmout);
+            let ips = (count[0] + count[1] + count[2]) / elapsed;
             console.log('scanned: %d nodes, %d ways, %d relations', ...count);
+            console.log(`         ${ips.toFixed(0)} items/sec.`);
             console.log('no tags in %d nodes, %d ways, %d relations', ...empty);
         }
     }
@@ -189,8 +200,8 @@ function version() {
     db.close();
     let version = 'unknown';
     try {
-        const pkgfn = path.join(path.dirname(process.argv[1]), '/package.json');
-        const pkg = JSON.parse(fs.readFileSync(pkgfn).toString());
+        const pkgfn = join(dirname(process.argv[1]), '/package.json');
+        const pkg = JSON.parse(readFileSync(pkgfn).toString());
         version = pkg.version;
     } catch (err) {
         console.log('Installation problem: package.json missing or corrupted.');
