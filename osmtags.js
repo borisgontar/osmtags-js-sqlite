@@ -2,7 +2,7 @@ import { createReadStream, existsSync, readFileSync } from 'node:fs';
 import { parseArgs, format } from 'node:util';
 import { join, dirname } from 'node:path';
 import { Transform } from 'readable-stream';
-import parseOSM from './lib/parser.js';
+import { BlobDecompressor, BlobParser, PrimitivesParser } from './lib/parser.js';
 import Database from 'better-sqlite3';
 
 const usage = `
@@ -113,7 +113,10 @@ function store() {
 function scan(file, callback) {
     return new Promise(resolve => {
         createReadStream(file)
-            .pipe(parseOSM())
+            //.pipe(parseOSM())
+            .pipe(new BlobParser())
+            .pipe(new BlobDecompressor())
+            .pipe(new PrimitivesParser({withInfo: false}))
             .pipe(new Transform.PassThrough({
                 objectMode: true,
                 //highWaterMark: 1,
