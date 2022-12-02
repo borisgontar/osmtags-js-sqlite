@@ -74,8 +74,9 @@ on my PC (Intel i7-2600 at 3.40GHz, memory DDR3 at 800MHz, SATA SSD).
 $ node osmtags.js -d planet-tags.sqlite -c -l 1024 planet-latest.osm.pbf
 reading planet-latest.osm.pbf
 scanned: 7961992696 nodes, 892558311 ways, 10291367 relations
+         778282 items/sec.
 no tags in 7761372553 nodes, 14830012 ways, 182 relations
-elapsed: 3:10:16.463 (h:mm:ss.mmm)
+elapsed: 3:09:54.805 (h:mm:ss.mmm)
 ```
 The resuling database is about 36Mb in size. It's included into the <code>example</code>
 subdirectory just in case you want to play with it.
