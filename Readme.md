@@ -81,7 +81,6 @@ elapsed: 3:09:54.805 (h:mm:ss.mmm)
 On my NUC (Intel i0-12900, memory DDR4 at 3200 MHz, NVMe SSD) the process
 took 1 hour 14 min., 1995181 items/sec.
 
-The resuling database is about 36Mb in size. It's included into the <code>example</code>
 The resuling database is about 36Mb in size. It's included into the `example`
 subdirectory just in case you want to play with it.
 
