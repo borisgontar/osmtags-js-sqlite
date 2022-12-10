@@ -1,8 +1,8 @@
 import { createReadStream, existsSync, readFileSync } from 'node:fs';
 import { parseArgs, format } from 'node:util';
 import { join, dirname } from 'node:path';
-import { Transform } from 'readable-stream';
-import { BlobDecompressor, BlobParser, PrimitivesParser } from './lib/parser.js';
+import { Transform } from 'node:stream';
+import { OSMTransform } from 'osm-pbf-parser-node';
 import Database from 'better-sqlite3';
 
 const usage = `
@@ -113,13 +113,9 @@ function store() {
 function scan(file, callback) {
     return new Promise(resolve => {
         createReadStream(file)
-            //.pipe(parseOSM())
-            .pipe(new BlobParser())
-            .pipe(new BlobDecompressor())
-            .pipe(new PrimitivesParser({withInfo: false}))
+            .pipe(new OSMTransform({withInfo: false, batchMode: true}))
             .pipe(new Transform.PassThrough({
                 objectMode: true,
-                //highWaterMark: 1,
                 transform: (items, enc, next) => {
                     for (let item of items)
                         callback(item);
@@ -150,8 +146,16 @@ async function pass() {
             let {type, tags} = item;
             let j = type == 'node' ? 0 : type == 'way' ? 1 :
                 type == 'relation' ? 2 : -1;
-            if (j < 0)
+            if (j < 0) {
+                if (item.osmosis_replication_timestamp) {
+                    if (!args.quiet) {
+                        let tm = new Date(item.osmosis_replication_timestamp * 1000);
+                        console.log('timestamp: ' + tm.toUTCString());
+                    }
+                    return;
+                }
                 throw new Error('file format error: type=' + type);
+            }
             let haskeys = false;
             for (let key in tags) {
                 haskeys = true;

@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.3.0] - 2022-12-10
+
+All dependencies removed except better-sqlite3 and
+added osm-pbf-parser-node. The output now contains the timestamp
+from the pbf file.
+
 ## [1.2.1] - 2022-11-29
 
 Dependency on substack/osm-pbf-parser removed as this package is

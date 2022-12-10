@@ -57,17 +57,16 @@ Positional args: paths to the input files.
 Note that:
 
 * If the target database does not exists it will be created.
-  If the table <code>osmtags</code> does not exists it will be created,
+  If the table `osmtags` does not exists it will be created,
   otherwise the new data will be merged with existing data.
 
-* If the <code>-c</code> option is present, all keys like <code>addr</code> and <code>addr:whatever</code> are treated as the same key <code>addr</code>.
+* If the `-c` option is present, all keys like `addr` and `addr:whatever`
+are treated as the same key `addr`.
 
-* The <code>-l</code> option sets the limit of stored distinct values for a key
+* The `-l` option sets the limit of stored distinct values for a key
  to the specified number. The default is 256.
 
-Due to excellent [osm-pbf-parser](https://github.com/substack/osm-pbf-parser)
-by substack and [better-sqlite3](https://github.com/JoshuaWise/better-sqlite3)
-by JoshuaWise the application is simple and fast. Counting tags in
+The application is simple and fast. Counting tags in
 `planet-latest.osm.pbf` (dated Oct. 2022, 67Gb) took 3 hours 10 min.
 on my PC (Intel i7-2600 at 3.40GHz, memory DDR3 at 800MHz, SATA SSD).
 ```
@@ -78,12 +77,12 @@ scanned: 7961992696 nodes, 892558311 ways, 10291367 relations
 no tags in 7761372553 nodes, 14830012 ways, 182 relations
 elapsed: 3:09:54.805 (h:mm:ss.mmm)
 ```
-The resuling database is about 36Mb in size. It's included into the <code>example</code>
+The resuling database is about 36Mb in size. It's included into the `example`
 subdirectory just in case you want to play with it.
 
 ## Examples
 
-To run queries against the database you need the <code>sqlite3</code> utility.
+To run queries against the database you need the `sqlite3` utility.
 Download the 'sqlite-tools' binaries from https://sqlite.org/download.html and
 copy the executable files into a directory in your $PATH. To make query results
 look better, set output mode like this:

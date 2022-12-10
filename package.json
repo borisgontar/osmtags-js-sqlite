@@ -13,7 +13,7 @@
     "sqlite3",
     "GIS",
     "tags",
-    "openstreetmap",
+    "OpenStreetMap",
     "OSM",
     "PBF",
     "extract"
@@ -22,9 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^8.0.0",
-    "protocol-buffers": "^5.0.0",
-    "readable-stream": "^4.2.0",
-    "stream-combiner2": "^1.1.1"
+    "osm-pbf-parser-node": "file:../osm-pbf-parser-node"
   },
   "repository": {
     "type": "git",
