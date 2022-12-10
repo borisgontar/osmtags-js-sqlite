@@ -1,6 +1,6 @@
 {
   "name": "osmtags",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Extracts all keys and their values from an OSM pbf file.",
   "main": "osmtags.js",
   "type": "module",
@@ -22,7 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^8.0.0",
-    "osm-pbf-parser-node": "file:../osm-pbf-parser-node"
+    "osm-pbf-parser-node": "^1.0.0"
   },
   "repository": {
     "type": "git",
