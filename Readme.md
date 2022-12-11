@@ -162,12 +162,6 @@ mapper      mspray13    26951
 Source      Akros       25816
 ```
 
-## Acknowledgments
-
-This application is based on the osm-pbf-parser version 2.3.0 published by substack
-in about 2014. As it is no longer (as of Nov. 2022) available on Github,
-its code (after some trivial modifications) was copied into lib/parser.js.
-
 ## P.S.
 Of course the [taginfo](https://taginfo.openstreetmap.org/) site already has
 all kinds of statistics about tags in the OpenStreetMap database.
