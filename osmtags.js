@@ -113,7 +113,7 @@ function store() {
 function scan(file, callback) {
     return new Promise(resolve => {
         createReadStream(file)
-            .pipe(new OSMTransform({withInfo: false, batchMode: true}))
+            .pipe(new OSMTransform({ withTags: true, withInfo: false }))
             .pipe(new Transform.PassThrough({
                 objectMode: true,
                 transform: (items, enc, next) => {
